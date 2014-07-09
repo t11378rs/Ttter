@@ -12,7 +12,7 @@ const char TOKEN[] = "257882187-WBB2XIkhdbzicQIrl9G9X3dkcOsUlhTXx7oRayZY";
 byte mac[] = { 0x00, 0x16, 0x3E, 0x5C, 0xF2, 0x7E };
 
 // If you don't specify the IP address, DHCP is used(only in Arduino 1.0 or later).
-byte ip[] = { 192, 168, 2, 104 };
+byte ip[] = { 192, 168, 2, 106 };
 
 // Your Token to Tweet (get it from http://arduino-tweet.appspot.com/)
 Twitter twitter(TOKEN);
