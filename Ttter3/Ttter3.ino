@@ -6,19 +6,28 @@
 // Please uncomment below in Arduino IDE 0022 or earlier.
 //#include <EthernetDNS.h>
 
+// Constants that has been finalized
+const byte TEST = 0;
+const byte PRODUCTION = 1;
 const int LED_PIN = 13;
 const int BUTTON_PIN = 7;
 const int SPEAKER_PIN = 9;
 const char TOKEN[] = "257882187-WBB2XIkhdbzicQIrl9G9X3dkcOsUlhTXx7oRayZY";
 byte MAC[] = { 0x00, 0x16, 0x3E, 0x5C, 0xF2, 0x7E };
 byte IP[] = { 192, 168, 2, 104 };
+
+// Constants thas has "not" been finalized
 const int SINGLE_TIME = 400;
 
+// variables
 Twitter twitter(TOKEN);
 char morse_msg[140];
 char msg[] = "Kounaien mo itai death";
 byte button_state = 0;
 byte morse_msg_cursor = 0;
+
+// variable to demonstrate development_phase
+byte dev_phase = TEST;
 
 
 void setup()
@@ -116,15 +125,21 @@ void print_s_ul_s(char text1[], unsigned long digit, char text2[]){
 
 void post(char string[]){
   Serial.println("connecting ...");
-  if (twitter.post(string)) {
-    int status = twitter.wait(&Serial);
-    if (status == 200) {
-      Serial.println("OK.");
+  if(dev_phase == PRODUCTION){
+    if (twitter.post(string)) {
+      int status = twitter.wait(&Serial);
+      if (status == 200) {
+        Serial.println("OK.");
+      } else {
+        Serial.print("failed : code ");
+        Serial.println(status);
+      }
     } else {
-      Serial.print("failed : code ");
-      Serial.println(status);
+      Serial.println("connection failed.");
     }
-  } else {
-    Serial.println("connection failed.");
+  }else if(dev_phase == TEST){
+    Serial.print("post ");
+    Serial.println(string);
+    Serial.println("OK.")
   }
 }
