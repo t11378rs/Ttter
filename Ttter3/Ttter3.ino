@@ -1,6 +1,7 @@
 #include <SPI.h> // needed in Arduino 0019 or later
 #include <Ethernet.h>
 #include <Twitter.h>
+#include <String.h>
 
 // The includion of EthernetDNS is not needed in Arduino IDE 1.0 or later.
 // Please uncomment below in Arduino IDE 0022 or earlier.
@@ -15,20 +16,93 @@ const int SPEAKER_PIN = 9;
 const char TOKEN[] = "257882187-WBB2XIkhdbzicQIrl9G9X3dkcOsUlhTXx7oRayZY";
 byte MAC[] = { 0x00, 0x16, 0x3E, 0x5C, 0xF2, 0x7E };
 byte IP[] = { 192, 168, 2, 104 };
+/*
+String A = "*-EEEEEEEE";
+String B = "-***EEEEEE";
+String C = "-*-*EEEEEE";
+String D = "-**EEEEEEE";
+String E = "*EEEEEEEEE";
+String F = "**-*EEEEEE";
+String G = "--*EEEEEEE";
+String H = "****EEEEEE";
+String I = "**EEEEEEEE";
+String J = "*---EEEEEE";
+String K = "-*-EEEEEEE";
+String L = "*-**EEEEEE";
+String M = "--EEEEEEEE";
+String N = "-*EEEEEEEE";
+String O = "---EEEEEEE";
+String P = "*--*EEEEEE";
+String Q = "--*-EEEEEE";
+String R = "*-*EEEEEEE";
+String S = "***EEEEEEE";
+String T = "-EEEEEEEEE";
+String U = "**-EEEEEEE";
+String V = "***--EEEEE";
+String W = "*--EEEEEEE";
+String X = "-**-EEEEEE";
+String Y = "-*--EEEEEE";
+String Z = "--**EEEEEE";
+String num_1 = "*----EEEEE";
+String num_2 = "**---EEEEE";
+String num_3 = "***--EEEEE";
+String num_4 = "****-EEEEE";
+String num_5 = "*****EEEEE";
+String num_6 = "-****EEEEE";
+String num_7 = "--***EEEEE";
+String num_8 = "---**EEEEE";
+String num_9 = "----*EEEEE";
+String num_0 = "-----EEEEE";
+String symbol_period = "*-*-*-EEEE";
+String symbol_comma = "--**--EEEE";
+String symbol_colon = "---***EEEE";
+String symbol_question = "**--**EEEE";
+String symbol_leftparen = "-*--*EEEEE";
+String symbol_rightparen = "-*--*-EEEE";
+String symbol_atsign = "*--*-*EEEE";
+String symbol_underbar = "*-*-*EEEEE";//これほんとは＋なんだけどTwitter向けにアンダーバーとした
+String mark_close = "***-*-EEEE";
+String mark_start = "-*-*-EEEEE";
+*/
+String morse_codes[] = {//46こ
+  "*-EEEEEEEE", "-***EEEEEE", "-*-*EEEEEE", "-**EEEEEEE", "*EEEEEEEEE",
+  "**-*EEEEEE", "--*EEEEEEE", "****EEEEEE", "**EEEEEEEE", "*---EEEEEE",
+  "-*-EEEEEEE", "*-**EEEEEE", "--EEEEEEEE", "-*EEEEEEEE", "---EEEEEEE",
+  "*--*EEEEEE", "--*-EEEEEE", "*-*EEEEEEE", "***EEEEEEE", "-EEEEEEEEE",
+  "**-EEEEEEE", "***--EEEEE", "*--EEEEEEE", "-**-EEEEEE", "-*--EEEEEE",
+  "--**EEEEEE", 
+  "*----EEEEE", "**---EEEEE", "***--EEEEE", "****-EEEEE", "*****EEEEE",
+  "-****EEEEE", "--***EEEEE", "---**EEEEE", "----*EEEEE", "-----EEEEE",
+  "*-*-*-EEEE", "--**--EEEE", "---***EEEE", "**--**EEEE", "-*--*EEEEE",
+  "-*--*-EEEE", "*--*-*EEEE", "*-*-*EEEEE", "***-*-EEEE", "-*-*-EEEEE"
+};
+/*
+  A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,
+  num_1,num_2,num_3,num_4,num_5,num_6,num_7,num_8,num_9,num_0,
+  symbol_period,symbol_comma,symbol_colon,symbol_question,symbol_leftparen,symbol_rightparen,symbol_atsign,symbol_underbar,
+  mark_close,mark_start
+*/
+
+char morse_codes_dictionary[] = {
+  'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
+  '1','2','3','4','5','6','7','8','9','0',
+  '.',',',':','?','(',')','@','_',
+  'x','o'
+};//xがクローズ、oがスタート
 
 // Constants thas has "not" been finalized
 const int SINGLE_TIME = 400;
 
 // variables
 Twitter twitter(TOKEN);
-char morse_msg[140];
-char msg[] = "Kounaien mo itai death";
+String morse_msg = "EEEEEEEEE";
+String msg = "";
 byte button_state = 0;
 byte morse_msg_cursor = 0;
+byte msg_cursor = 0;
 
 // variable to demonstrate development_phase
-byte dev_phase = TEST;
-
+const byte dev_phase = TEST;
 
 void setup()
 {
@@ -47,12 +121,13 @@ void setup()
     Serial.print(":");
   }
   Serial.println("");
-
+  Serial.println(morse_msg);
 
   delay(1000);
   
   Ethernet.begin(MAC, IP);  
 }
+
 
 void loop()
 {
@@ -61,7 +136,6 @@ void loop()
 
   unsigned long just_before_pushed = millis();//ボタンが押される直前の時間
   if(digitalRead(BUTTON_PIN) == HIGH){
-    //digitalWrite(LED_PIN, HIGH); //LEDをON
     tone(SPEAKER_PIN, 262);
   }
   while(digitalRead(BUTTON_PIN) == HIGH){//ボタンが押されている間
@@ -70,18 +144,22 @@ void loop()
   print_s_ul_s("pushed_interval is ", pushed_interval, " sec");
   if(digitalRead(BUTTON_PIN) == LOW){//LOWになった瞬間
     if(SINGLE_TIME*3 < pushed_interval){    //長音分(single*3)押されていたら3~
-      morse_msg[morse_msg_cursor] = '-';//長音をmorse_msgに入れる
-      Serial.println("add -");
+      morse_msg.setCharAt(morse_msg_cursor, '-');//長音をmorse_msgに入れる
+      Serial.print("add ");
+      //Serial.println(morse_msg.charAt(morse_msg_cursor));
+      Serial.println(morse_msg);
       morse_msg_cursor++;
     }else if(SINGLE_TIME < pushed_interval){//単音分(single)押されていたら 1~2
-      morse_msg[morse_msg_cursor] = '*';//単音をmorse_msgに入れる
-      Serial.println("add *");
+      morse_msg.setCharAt(morse_msg_cursor, '*');//単音をmorse_msgに入れる
+      Serial.print("add ");
+      //Serial.println(morse_msg.charAt(morse_msg_cursor));
+      Serial.println(morse_msg);
       morse_msg_cursor++;
     }else{//単音以下の時は
+      Serial.println("Unknown: too short pushed interval!");
       //何もしない
     }
     noTone(SPEAKER_PIN);
-    //digitalWrite(LED_PIN, LOW); //LEDをOFF
   }
 
   unsigned long just_before_released = millis();
@@ -92,30 +170,72 @@ void loop()
   if(digitalRead(BUTTON_PIN) == HIGH){//ボタンが押された瞬間
     if(SINGLE_TIME*14 < released_interval){//14拍以上離されていたら 14~
       //何もしない
+      Serial.println("Unknown: too long released interval!");
     }else if(SINGLE_TIME*7 < released_interval){//7拍分離されていたら 7~13
-      morse_msg[morse_msg_cursor] = ' ';//空白をmorse_msgに入れる
-      Serial.println("add space");
-      morse_msg_cursor++;
+      //morse_msg[morse_msg_cursor] = ' ';//空白をmorse_msgに入れる
+      //Serial.println("add space");
+      //morse_msg_cursor++;
+      //何もしない
     }else if(SINGLE_TIME*3 < released_interval){//3拍分離されていたら 3~7
-      //morse_msgを翻訳して、msgに加え
-      //morse_msgを空にする
-      //morse_msg_cursorも空にする
-      //空白文字のため時間はリセットしない
-      //翻訳したものが開始信号だったら、全てをリセット
-      morse_msg[morse_msg_cursor] = 'E';
-      Serial.println("add EOE");
-      if(true){//翻訳したものが終了信号だったら、msgを投稿
-        post(morse_msg);
+      char c = translation(morse_msg); //morse_msgを翻訳
+      if(c=='x'){//翻訳したものが終了信号だったら、msgを投稿
+        post(msg);
+      }else if(c=='o'){//翻訳したものが開始信号だったら、全てをリセット
+        msg="";
+        morse_msg="EEEEEEEEEE";
+        msg_cursor = 0;
+        morse_msg_cursor = 0;
+      }else{//開始終了文字でなければ(unknown文字も含まれることに注意)
+        msg.concat(c); //msgに加えて
+        msg_cursor++;
+        morse_msg="EEEEEEEEEE";//morse_msgを空にする
+        morse_msg_cursor=0;//morse_msg_cursorも空にする
       }
     }else if(SINGLE_TIME < released_interval){//1拍分離されていたら
       //何もしない
+      Serial.println("Unknown: too short released interval!");
     }
   }
 }
 
-char translation(char morse[]){
-  //モールス信号を文字に翻訳する
+//モールス信号を文字に翻訳する
+char translation(String morse){
+  Serial.println("translating...");
+  for(int i=0; i<46; i++){
+    String morse_code = morse_codes[i];
+    if(morse.equals(morse_code)){
+      Serial.print("done. \"");
+      Serial.print(morse);
+      Serial.print("\" is ");
+      Serial.println(morse_codes_dictionary[i]);
+      return morse_codes_dictionary[i];
+    }else{
+      //do nothing
+    }
+  }
+  //一致するものが一つもなかったら
+  Serial.println("no match. return unknown character \'#\'");
+  return '#';
 }
+/*
+int myCompareString(char text1[], char text2[]){
+  //サイズを調べる
+  if( sizeof(text1) != sizeof(text2)){
+    return -1;
+  }else{
+    for(int i=0; i<=sizeof(text1); i++){
+      if(text1[i] != text2[i]){
+        return -1;
+      }else{
+        //do nothing
+      }
+      delay(100);
+    }
+    return 1;
+  }
+}
+*/
+
 
 void print_s_ul_s(char text1[], unsigned long digit, char text2[]){
   Serial.print(text1);
@@ -123,10 +243,16 @@ void print_s_ul_s(char text1[], unsigned long digit, char text2[]){
   Serial.println(text2);
 }
 
-void post(char string[]){
+void post(String str){
+  //string_to_char_array
+  char post_str[str.length()];
+  for(int i=0; i<str.length(); i++){
+    post_str[i] = str.charAt(i);
+  }
+
   Serial.println("connecting ...");
   if(dev_phase == PRODUCTION){
-    if (twitter.post(string)) {
+    if (twitter.post(post_str)) {
       int status = twitter.wait(&Serial);
       if (status == 200) {
         Serial.println("OK.");
@@ -139,7 +265,7 @@ void post(char string[]){
     }
   }else if(dev_phase == TEST){
     Serial.print("post ");
-    Serial.println(string);
-    Serial.println("OK.")
+    Serial.println(post_str);
+    Serial.println("OK.");
   }
 }
