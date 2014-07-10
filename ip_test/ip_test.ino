@@ -39,7 +39,7 @@ void setup()
   //bruet_force();
   
   //決め打ち
-  byte IP[] = { 192, 168, 3, 255 };
+  byte IP[] = { 192, 168, 2, 104 };
   hard_coded(IP);
 }
 
@@ -51,8 +51,8 @@ void loop()
 void bruet_force(){
   int successful = -1;
   for(int i=0; i<=255; i++){
-    byte ip[] = { 192, 168, 2, i };
-    //byte ip[] = { 192, 168, 100+i, 4 };
+    //byte ip[] = { 192, 168, 2, i };
+    byte ip[] = { 192, 168, 100+i, 4 };
     Ethernet.begin(mac, ip);  
     Serial.println("connecting ...");
      Serial.print("ip: ");
