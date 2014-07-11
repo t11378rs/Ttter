@@ -10,12 +10,17 @@
 // Constants that has been finalized
 const byte TEST = 0;
 const byte PRODUCTION = 1;
-const int LED_PIN = 13;
+//const int LED_PIN = 13;
 const int BUTTON_PIN = 7;
 const int SPEAKER_PIN = 9;
 const char TOKEN[] = "257882187-WBB2XIkhdbzicQIrl9G9X3dkcOsUlhTXx7oRayZY";
-byte MAC[] = { 0x00, 0x16, 0x3E, 0x5C, 0xF2, 0x7E };
-byte IP[] = { 192, 168, 2, 104 };
+//byte MAC[] = { 0x00, 0x16, 0x3E, 0x5C, 0xF2, 0x7E };
+//byte IP[] = { 192, 168, 2, 104 };
+byte MAC[] = { 0x00, 0x22, 0xCF, 0xED, 0xDB, 0x30 };
+byte IP[] = { 192, 168, 2, 2 };
+byte DNP[]  = {192, 168, 2, 1};
+byte GATEWAY[] = {192, 168, 2, 1};
+byte SUBNET[] = {255, 255, 255, 0};
 /*
 String A = "*-EEEEEEEE";
 String B = "-***EEEEEE";
@@ -91,10 +96,10 @@ char morse_codes_dictionary[] = {//28こ。アルファベットとシンボル�
   /*'1','2','3','4','5','6','7','8','9','0',
   '.',',',':','?','(',')','@','_',*/
   'x','o'
-};//xがクローズ、oがスタート
+};//x is close, o is start
 
 // Constants thas has "not" been finalized
-const int SINGLE_TIME = 300;
+const int SINGLE_TIME = 250;
 
 // variables
 Twitter twitter(TOKEN);
@@ -105,19 +110,13 @@ byte morse_msg_cursor = 0;
 byte msg_cursor = 0;
 
 // variable to demonstrate development_phase
-const byte dev_phase = PRODUCTION;
+const byte dev_phase = TEST;
 
 void setup()
 {
   Serial.begin(9600);
-  
-  Serial.print("ip: ");
-  for(int i=0; i<4; i++){
-    Serial.print(IP[i]);
-    Serial.print(":");
-  }
-  Serial.println("");
-  
+
+
   Serial.print("mac: ");
   for(int i=0; i<6; i++){
     Serial.print(MAC[i]);
@@ -125,15 +124,46 @@ void setup()
   }
   Serial.println("");
   Serial.println(morse_msg);
+  
+  Serial.print("ip: ");
+  for(int i=0; i<4; i++){
+    Serial.print(IP[i]);
+    Serial.print(":");
+  }
+  Serial.println("");
+
+  Serial.print("dnp: ");
+  for(int i=0; i<4; i++){
+    Serial.print(DNP[i]);
+    Serial.print(":");
+  }
+  Serial.println("");
+
+  Serial.print("gateway: ");
+  for(int i=0; i<4; i++){
+    Serial.print(GATEWAY[i]);
+    Serial.print(":");
+  }
+  Serial.println("");
+
+  Serial.print("subnet: ");
+  for(int i=0; i<4; i++){
+    Serial.print(SUBNET[i]);
+    Serial.print(":");
+  }
+  Serial.println("");
+
+  
+
 
   delay(1000);
   
-  Ethernet.begin(MAC, IP);  
+  Ethernet.begin(MAC, IP, DNP, GATEWAY, SUBNET);  
 
   morse_msg = "EEEEEEEEEE";
   msg = "";
-  Serial.println(morse_msg);
-  Serial.println(msg);
+  //Serial.println(morse_msg);
+  //Serial.println(msg);
 }
 
 
@@ -151,7 +181,7 @@ void loop()
   }
   print_s_ul_s("pushed_interval is ", pushed_interval, " sec");
   if(digitalRead(BUTTON_PIN) == LOW){//LOWになった瞬間
-    if(SINGLE_TIME*2.5 < pushed_interval){    //長音分(single*3)押されていたら3~
+    if(SINGLE_TIME*3 < pushed_interval){    //長音分(single*3)押されていたら3~
       morse_msg.setCharAt(morse_msg_cursor, '-');//長音をmorse_msgに入れる
       Serial.print("add ");
       //Serial.println(morse_msg.charAt(morse_msg_cursor));
@@ -188,11 +218,9 @@ void loop()
       char c = translation(morse_msg); //morse_msgを翻訳
       if(c=='x'){//翻訳したものが終了信号だったら、msgを投稿
         post(msg);
+        reset_all();
       }else if(c=='o'){//翻訳したものが開始信号だったら、全てをリセット
-        msg="";
-        morse_msg="EEEEEEEEEE";
-        msg_cursor = 0;
-        morse_msg_cursor = 0;
+        reset_all();
       }else{//開始終了文字でなければ(unknown文字も含まれることに注意)
         msg.concat(c); //msgに加えて
         msg_cursor++;
@@ -204,6 +232,13 @@ void loop()
       Serial.println("Unknown: too short released interval!");
     }
   }
+}
+
+void reset_all(){
+  msg="";
+  morse_msg="EEEEEEEEEE";
+  msg_cursor = 0;
+  morse_msg_cursor = 0;
 }
 
 //モールス信号を文字に翻訳する
