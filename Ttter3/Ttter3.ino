@@ -95,11 +95,11 @@ char morse_codes_dictionary[] = {//28こ。アルファベットとシンボル�
   'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P',/*'Q',*/'R','S','T','U',/*'V',*/'W','X','Y','Z',
   /*'1','2','3','4','5','6','7','8','9','0',
   '.',',',':','?','(',')','@','_',*/
-  'x','o'
-};//x is close, o is start
+  '.','o'
+};//. is close, o is start
 
 // Constants thas has "not" been finalized
-const int SINGLE_TIME = 250;
+const int SINGLE_TIME = 200;
 
 // variables
 Twitter twitter(TOKEN);
@@ -174,7 +174,7 @@ void loop()
 
   //もし押されていたら音を出す
   if(digitalRead(BUTTON_PIN) == HIGH){
-    tone(SPEAKER_PIN, 262);
+    tone(SPEAKER_PIN, 800);
   //}else{
   //  noTone(SPEAKER_PIN);
   }
@@ -186,23 +186,21 @@ void loop()
   unsigned long just_after_pushed = millis();
   pushed_interval = just_after_pushed - just_before_pushed;
   print_s_ul_s("pushed_interval is ", pushed_interval, " msec");
-  if(digitalRead(BUTTON_PIN) == LOW){//LOWになった瞬間
-    if(SINGLE_TIME*2.5 < pushed_interval){    //長音分(single*3)押されていたら3~
-      morse_msg.setCharAt(morse_msg_cursor, '-');//長音をmorse_msgに入れる
-      Serial.print("add ");
-      Serial.println(morse_msg);
-      morse_msg_cursor++;
-    }else if(SINGLE_TIME < pushed_interval){//単音分(single)押されていたら 1~2
-      morse_msg.setCharAt(morse_msg_cursor, '*');//単音をmorse_msgに入れる
-      Serial.print("add ");
-      Serial.println(morse_msg);
-      morse_msg_cursor++;
-    }else{//単音以下の時は
-      Serial.println("Unknown: too short pushed interval!");
-      //何もしない
-    }
-    noTone(SPEAKER_PIN);
+  if(SINGLE_TIME*2.5 < pushed_interval){    //長音分(single*3)押されていたら3~
+    morse_msg.setCharAt(morse_msg_cursor, '-');//長音をmorse_msgに入れる
+    Serial.print("add ");
+    Serial.println(morse_msg);
+    morse_msg_cursor++;
+  }else if(SINGLE_TIME < pushed_interval){//単音分(single)押されていたら 1~2
+    morse_msg.setCharAt(morse_msg_cursor, '*');//単音をmorse_msgに入れる
+    Serial.print("add ");
+    Serial.println(morse_msg);
+    morse_msg_cursor++;
+  }else{//単音以下の時は
+    Serial.println("Unknown: too short pushed interval!");
+    //何もしない
   }
+  noTone(SPEAKER_PIN);
 
   unsigned long just_before_released = millis();
   while(digitalRead(BUTTON_PIN) == LOW){//ボタンが離されている間
@@ -211,31 +209,29 @@ void loop()
   unsigned long just_after_released = millis();
   released_interval = just_after_released - just_before_released;
   print_s_ul_s("released_interval is ", released_interval, " msec");
-  if(digitalRead(BUTTON_PIN) == HIGH){//ボタンが押された瞬間
-    if(SINGLE_TIME*14 < released_interval){//14拍以上離されていたら 14~
-      //do nothing
-      Serial.println("Unknown: too long released interval!");
-    //}else if(SINGLE_TIME*10 < released_interval){//7拍分離されていたら 7~13
-      //morse_msg[morse_msg_cursor] = ' ';//空白をmorse_msgに入れる
-      //Serial.println("add space");
-      //morse_msg_cursor++;
-    }else if(SINGLE_TIME*4 < released_interval){//3拍分離されていたら 3~7
-      char c = translation(morse_msg); //morse_msgを翻訳
-      if(c == 'x'){//翻訳したものが終了信号だったら、msgを投稿
-        post(msg);
-        reset_all();
-      }else if(c=='o'){//翻訳したものが開始信号だったら、全てをリセット
-        reset_all();
-      }else{//開始終了文字でなければ(unknown文字も含まれることに注意)
-        msg.concat(c); //msgに加えて
-        msg_cursor++;
-        morse_msg="EEEEEEEEEE";//morse_msgを空にする
-        morse_msg_cursor=0;//morse_msg_cursorも空にする
-      }
-    }else{//1拍分離されていたら
-      //何もしない
-      Serial.println("Unknown: too short released interval!");
+  if(SINGLE_TIME*14 < released_interval){//14拍以上離されていたら 14~
+    //do nothing
+    Serial.println("Unknown: too long released interval!");
+  //}else if(SINGLE_TIME*10 < released_interval){//7拍分離されていたら 7~13
+    //morse_msg[morse_msg_cursor] = ' ';//空白をmorse_msgに入れる
+    //Serial.println("add space");
+    //morse_msg_cursor++;
+  }else if(SINGLE_TIME*4 < released_interval){//3拍分離されていたら 3~7
+    char c = translation(morse_msg); //morse_msgを翻訳
+    if(c == '.'){//翻訳したものが終了信号だったら、msgを投稿
+      post(msg);
+      reset_all();
+    }else if(c=='o'){//翻訳したものが開始信号だったら、全てをリセット
+      reset_all();
+    }else{//開始終了文字でなければ(unknown文字も含まれることに注意)
+      msg.concat(c); //msgに加えて
+      msg_cursor++;
+      morse_msg="EEEEEEEEEE";//morse_msgを空にする
+      morse_msg_cursor=0;//morse_msg_cursorも空にする
     }
+  }else{//1拍分離されていたら
+    //何もしない
+    Serial.println("Unknown: too short released interval!");
   }
 
   delay(50);
